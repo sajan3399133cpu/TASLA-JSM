@@ -1,5 +1,5 @@
-# TASLA JSM v5 FINAL ULTIMATE - COLAB COMPATIBLE
-# By JAM SAEED MOTHA - Built in Karachi | 4 Years Alone at 3AM
+# TASLA JSM 
+# By SAEED - Built in Karachi | 
 # TOTAL SAVED $300k + NAV MAP + FUTURE PREDICTION + AI BRAIN + VOICE + CARLA
 
 !pip install fastapi uvicorn nest-asyncio torch -q
@@ -84,6 +84,6 @@ def run_server():
 
 threading.Thread(target=run_server, daemon=True).start()
 time.sleep(2)
-print(f"✅ v5 ULTIMATE LIVE! {MODEL_STATUS}")
+print(f"✅ ULTIMATE LIVE! {MODEL_STATUS}")
 from google.colab import output
 output.serve_kernel_port_as_window(8000)
