@@ -1,43 +1,67 @@
 <!DOCTYPE html>
-<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TASLA JSM</title>
-<style>body{margin:0;background:#000;color:#fff;font-family:system-ui;overflow:hidden}#c{width:100%;height:62vh;display:block}.hud{display:flex;gap:4px;padding:5px;background:#0a0a0a}.card{flex:1;background:#111;border:1px solid #222;border-radius:6px;padding:5px;text-align:center;font-size:10px}.card b{color:#00ff88;font-size:13px;display:block}.log{height:16vh;overflow:auto;background:#000;color:#0f0;font:9px monospace;padding:5px}</style></head>
-<body><canvas id="c"></canvas><div class="hud"><div class="card"><b id="d">--</b><span id="o">LiDAR Scanning</span></div><div class="card"><b id="s">0</b>SPEED<br><span style="color:#00ff88">AUTO</span></div><div class="card"><b id="st">0°</b><span id="b">Human Brain</span></div></div><div class="log" id="log"></div>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TASLA JSM</title>
+<style>
+:root{--tesla:#e82127}
+*{margin:0;box-sizing:border-box}body{background:#07070a;color:#fff;font-family:system-ui;overflow:hidden}
+.top{display:flex;justify-content:space-between;padding:10px 14px;background:#101014;border-bottom:1px solid #222;font-size:12px}
+.top b{color:var(--tesla)}.badge{background:#00ff88;color:#000;padding:2px 8px;border-radius:20px;font-weight:800;font-size:10px}
+/* ROAD - SINGLE CONTAINER - FREE EGO */
+.road{position:relative;width:100%;height:58vh;background:linear-gradient(#0b1a 0%,#000 35%,#111 100%);overflow:hidden;perspective:600px}
+.road::before{content:'';position:absolute;left:50%;top:30%;width:70%;height:70%;background:#1e1e1e;transform:translateX(-50%) rotateX(65deg);transform-origin:top;border-left:2px solid #333;border-right:2px solid #333}
+.lane-line{position:absolute;top:30%;bottom:0;width:2px;background:repeating-linear-gradient(to bottom,#fff 0 25px,transparent 25px 50px);animation:move 0.8s linear infinite}
+@keyframes move{from{transform:translateY(-50px)}to{transform:translateY(0)}}
+.lane-line.l1{left:38%}.lane-line.l2{left:62%}
+/* EGO - FREE, NOT TRAPPED IN.l */
+#ego{position:absolute;bottom:12px;left:50%;width:84px;height:36px;background:var(--tesla);border-radius:8px;transform:translateX(-50%);transition:left 0.4s cubic-bezier(.2,.8,.2,1);z-index:10;box-shadow:0 0 20px rgba(232,33,39,.6)}
+#ego::after{content:'TASLA JSM';position:absolute;top:-14px;left:50%;transform:translateX(-50%);font-size:9px;font-weight:900;white-space:nowrap;color:#fff;letter-spacing:1px}
+.traffic{position:absolute;bottom:0;left:0;width:100%;height:100%;pointer-events:none}
+.car{position:absolute;width:64px;height:28px;border-radius:6px;transform:translateX(-50%);transition:all 0.1s linear}
+.car::before{content:'';position:absolute;top:4px;left:6px;right:6px;height:8px;background:#000;border-radius:2px}
+.hud{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;padding:6px;background:#0c0c0f}
+.card{background:#15151a;border:1px solid #222;border-radius:8px;padding:7px;text-align:center}
+.card b{font-size:13px;display:block}.g{color:#00ff88}.r{color:var(--tesla)}.y{color:#ffcc00}
+.log{height:15vh;overflow:auto;background:#000;font:9px monospace;color:#0f0;padding:6px;border-top:1px solid #1a1a1a}
+</style></head>
+<body>
+<div class="top"><b>TASLA JSM • Tesla Red #e82127</b><div><span class="badge">$4.6M SCRUB SAVER</span> <span class="badge" style="background:#fff">$300K SAVED</span></div></div>
+<div class="road" id="road">
+<div class="lane-line l1"></div><div class="lane-line l2"></div>
+<div id="ego"></div>
+<div class="traffic" id="traffic"></div>
+</div>
+<div class="hud">
+<div class="card"><b class="g" id="lidar">--</b><span id="obj">LiDAR 100m Predictive</span></div>
+<div class="card"><b id="speed">0 km/h</b><span>AEB + ProDriverBrain</span></div>
+<div class="card"><b class="y" id="steer">0°</b><span id="brain">Human Brain Active</span></div>
+<div class="card"><b class="g" id="roi">300% ROI</b><span>Karachi 3AM Build</span></div>
+</div>
+<div class="log" id="log"></div>
 <script>
-let cv=document.getElementById('c'),ctx=cv.getContext('2d'),W,H,off=0,speed=50,egoLane=1,egoX=0,auto=true,steer=0,cars=[];
-function rs(){W=cv.width=innerWidth*2;H=cv.height=innerHeight*0.62*2}rs();
-function lg(t){let el=document.getElementById('log');el.innerHTML='['+new Date().toLocaleTimeString().split(' ')[0]+'] '+t+'<br>'+el.innerHTML}
-function spawn(){cars=[];for(let i=0;i<6;i++)cars.push({z:400+i*220,lane:Math.floor(Math.random()*3),type:Math.random()>0.7?'rickshaw':Math.random()>0.5?'car':'bike'})}spawn();
-
-function draw(){
-off+=speed;
-let horizon=H*0.38;
-ctx.fillStyle='#0a0a18';ctx.fillRect(0,0,W,H);
-ctx.fillStyle='#2a2a2a';ctx.beginPath();ctx.moveTo(W*0.5-6,horizon);ctx.lineTo(W*0.15,H);ctx.lineTo(W*0.85,H);ctx.lineTo(W*0.5+6,horizon);ctx.closePath();ctx.fill();
-ctx.strokeStyle='#555';ctx.setLineDash([30,25]);ctx.lineDashOffset=-off%55;ctx.lineWidth=2;
-for(let i=-1;i<=1;i++){ctx.beginPath();ctx.moveTo(W*0.5+i*8,horizon);ctx.lineTo(W*0.5+i*W*0.22,H);ctx.stroke()}ctx.setLineDash([]);
-
-// find closest
-let closest=null,minZ=1e9;
-cars.forEach(c=>{c.z-=speed*0.6;if(c.z<30){c.z=900+Math.random()*300;c.lane=Math.floor(Math.random()*3);c.type=Math.random()>0.7?'rickshaw':Math.random()>0.5?'car':'bike'} if(c.lane===egoLane && c.z>40 && c.z<minZ){minZ=c.z;closest=c}});
-
-if(closest){
-let dist=Math.floor(minZ/6);
-document.getElementById('d').innerText=dist+'m';document.getElementById('o').innerText=closest.type.toUpperCase()+' AHEAD';
-if(minZ<110){speed=Math.max(0,speed-6);document.getElementById('b').innerText='BRAKING';if(minZ%22<2)lg('BRAIN: Brake - '+closest.type+' '+dist+'m LiDAR < 20m')}
-else if(minZ<260){let freeLanes=[0,1,2].filter(l=>l!==egoLane &&!cars.some(o=>o.lane===l && Math.abs(o.z-minZ)<180));if(freeLanes.length>0){let target=freeLanes[0];let dir=target-egoLane;egoX+=dir*0.02;steer=dir*18;if(Math.abs(egoX)>0.9){egoLane=target;egoX=0}document.getElementById('b').innerText='OVERTAKE '+closest.type;if(minZ%35<2)lg('BRAIN: Overtake '+closest.type+' | Lane '+target);}else{speed=Math.max(10,speed-2)}}
-}else{document.getElementById('d').innerText='CLEAR';document.getElementById('o').innerText='NO OBSTACLE';document.getElementById('b').innerText='Cruising - Pickup: Karachi→Clifton';speed=Math.min(70,speed+0.3);egoX*=0.96;steer*=0.92}
-
-// draw other cars - SMALL & ON ROAD
-cars.sort((a,b)=>b.z-a.z).forEach(c=>{
-let p=400/(c.z+300);let y=horizon+(H-horizon)*(1-p*0.9);let x=W*0.5 + (c.lane-1)*W*0.22*p + (c.lane===egoLane?egoX*W*0.15*p:0);let w=p*90,h=p*38;if(w<4||y<horizon)return;
-ctx.fillStyle=c.type==='rickshaw'?'#ffcc00':c.type==='bike'?'#ff4444':'#ff5555';ctx.fillRect(x-w/2,y-h,w,h);ctx.fillStyle='#111';ctx.fillRect(x-w/2+w*0.1,y-h+h*0.15,w*0.8,h*0.2);
+const road=document.getElementById('road'),traffic=document.getElementById('traffic'),ego=document.getElementById('ego');
+let egoLane=1,egoX=50,speed=58,auto=true,steer=0,cars=[],offset=0;
+function log(t){const l=document.getElementById('log');l.innerHTML=`[${new Date().toLocaleTimeString()}] ${t}<br>`+l.innerHTML}
+function laneToX(l){return [25,50,75][l]} // % positions - FINAL FIX positions[lane]
+function spawn(){cars=[];for(let i=0;i<6;i++)cars.push({lane:Math.floor(Math.random()*3),z:400+i*180,type:Math.random()>0.6?'car':Math.random()>0.5?'bike':'rickshaw',el:null})}
+spawn();
+function getClosest(){let c=null,m=1e9;cars.forEach(o=>{if(o.lane===egoLane&&o.z>40&&o.z<m){m=o.z;c=o}});return {c,m}}
+function loop(){
+cars.forEach(o=>{o.z-=speed*0.7;if(o.z<20){o.z=850+Math.random()*250;o.lane=Math.floor(Math.random()*3)}
+if(!o.el){o.el=document.createElement('div');o.el.className='car';traffic.appendChild(o.el)}
+let p=380/(o.z+200);let y= 30 + (58-30)*(1-p); // % top
+let x=laneToX(o.lane);
+o.el.style.top=y+'%';o.el.style.left=x+'%';o.el.style.width=(p*64)+'px';o.el.style.height=(p*26)+'px';o.el.style.background=o.type==='rickshaw'?'#ffcc00':o.type==='bike'?'#ff4444':'#ff3333';o.el.style.opacity=p>0.15?1:0;
 });
-
-// ego corolla - SMALL, ONLY 1 LANE
-let ex=W*0.5+egoX*W*0.22*0.6;let ew=W*0.14,eh=W*0.06; // choti kar di
-ctx.fillStyle='#00ff88';ctx.fillRect(ex-ew/2,H-eh-8,ew,eh);ctx.fillStyle='#002211';ctx.fillRect(ex-ew/2+6,H-eh-2,ew-12,eh*0.3);
-document.getElementById('s').innerText=Math.floor(speed)+' km/h';document.getElementById('st').innerText=Math.floor(steer)+'°';
-requestAnimationFrame(draw)
+let {c:closest,m:minZ}=getClosest();
+if(closest){
+let d=Math.floor(minZ/5);
+document.getElementById('lidar').innerText=d+'m';
+document.getElementById('obj').innerText=closest.type.toUpperCase()+' '+d+'m';
+if(minZ<100){speed=Math.max(0,speed-7);steer=0;document.getElementById('brain').innerText='AEB BRAKING';if(minZ%20<2)log(`🧠 AEB: ${closest.type} ${d}m - 100m Predictive STOP`)}
+else if(minZ<250){let free=[0,1,2].filter(l=>l!==egoLane&&!cars.some(o=>o.lane===l&&Math.abs(o.z-minZ)<160));if(free.length){let t=free[0];egoLane=t;egoX=laneToX(t);steer=(t-1)*22;document.getElementById('brain').innerText=`OVERTAKE ${closest.type}`;if(minZ%30<2)log(`🧠 Predictive Overtake ${closest.type} Lane ${t} - positions[${t}]`)}}
+}else{document.getElementById('lidar').innerText='CLEAR';document.getElementById('obj').innerText='100m Clear';document.getElementById('brain').innerText='Cruise - Auto Pickup/Drop';speed=Math.min(72,speed+0.25);steer*=0.92}
+ego.style.left=egoX+'%';document.getElementById('speed').innerText=Math.floor(speed)+' km/h';document.getElementById('steer').innerText=Math.floor(steer)+'°';
+requestAnimationFrame(loop)
 }
-draw();lg('TASLA JSM - True FSD Started');lg('Mission: Auto pickup/drop - Karachi 3AM Build - $300K prevented');
+loop();log('TASLA JSM FINAL - Single.road container');log('TASLA v10 100m Predictive + v11 Tesla Red AEB positions[lane] + V24 $4.6M Scrub + Mission Control');log('Karachi 3AM - 4th of 7 brothers - $100M ask');
 </script></body></html>
