@@ -1,14 +1,19 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>TASLA JSM</title>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>JSM Drive AI - ADAS Dashboard</title>
 <style>
-:root{--tesla:#e82127}
-*{margin:0;box-sizing:border-box}body{background:#000;color:#fff;font-family:system-ui;overflow:hidden}
+:root{--jsm-red:#e82127; --jsm-blue:#00ccff}
+*{margin:0;box-sizing:border-box}
+body{background:#000;color:#fff;font-family:system-ui;overflow:hidden;transition:background 0.2s ease}
+
 /* LOGO TOP */
-.top{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#000;border-bottom:2px solid var(--tesla)}
-.logo{font-size:18px;font-weight:900;color:var(--tesla);letter-spacing:2px}
+.top{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#000;border-bottom:2px solid var(--jsm-red)}
+.logo{font-size:18px;font-weight:900;color:var(--jsm-red);letter-spacing:2px}
 .logo span{color:#fff}
-.time{color:#00ccff;font-weight:700;font-size:12px}
+.time{color:var(--jsm-blue);font-weight:700;font-size:12px}
 
 .road{position:relative;width:100%;height:50vh;background:linear-gradient(#87CEEB 0%, #90EE90 25%, #333 100%);overflow:hidden}
 .road::before{content:'';position:absolute;left:50%;bottom:0;width:100%;height:100%;background:#2a2a2a;transform:translateX(-50%);clip-path: polygon(12% 0, 88% 0, 100% 100%, 0% 100%);}
@@ -18,8 +23,8 @@
 @keyframes move{from{transform:translateY(0)}to{transform:translateY(60px)}}
 .lane-line.l1{left:33.3%}.lane-line.l2{left:66.6%}
 
-#ego{position:absolute;bottom:18px;left:50%;width:75px;height:35px;background:var(--tesla);border-radius:7px;transform:translateX(-50%);transition:left 0.12s ease;box-shadow:0 0 35px rgba(232,33,39,1)}
-#ego::after{content:'TASLA JSM';position:absolute;top:-18px;left:50%;transform:translateX(-50%);font-size:10px;font-weight:900;color:#0f0;white-space:nowrap}
+#ego{position:absolute;bottom:18px;left:50%;width:75px;height:35px;background:var(--jsm-red);border-radius:7px;transform:translateX(-50%);transition:left 0.12s ease;box-shadow:0 0 35px rgba(232,33,39,1)}
+#ego::after{content:'JSM DRIVE AI';position:absolute;top:-18px;left:50%;transform:translateX(-50%);font-size:10px;font-weight:900;color:#0f0;white-space:nowrap}
 .traffic{position:absolute;bottom:0;left:0;width:100%;height:100%}
 .car{position:absolute;border-radius:4px;transform:translateX(-50%)}
 .car-label{position:absolute;font-size:9px;background:#000d;padding:2px 5px;border-radius:3px;color:#0f0;font-weight:700}
@@ -34,11 +39,12 @@
 
 .hud{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:5px;padding:5px;background:#0c0c0f}
 .card{background:#15151a;border:1px solid #333;border-radius:7px;padding:6px;text-align:center}
-.card b{font-size:12px;display:block}.g{color:#00ff88}.r{color:var(--tesla)}.y{color:#ffcc00}.c{color:#00ccff}
+.card b{font-size:12px;display:block}.g{color:#00ff88}.r{color:var(--jsm-red)}.y{color:#ffcc00}.c{color:var(--jsm-blue)}
 .log{height:9vh;overflow:auto;background:#000;font:8px monospace;color:#0f0;padding:4px}
-</style></head>
+</style>
+</head>
 <body>
-<div class="top"><div class="logo">TASLA <span>JSM</span></div><div class="time" id="clock">--:--:--</div></div>
+<div class="top"><div class="logo">JSM <span>DRIVE AI</span></div><div class="time" id="clock">--:--:--</div></div>
 
 <div class="road" id="road">
 <div class="buildings"></div>
@@ -57,7 +63,7 @@
 
 <div class="hud">
 <div class="card"><b class="g" id="objects">0 OBJECTS</b><span id="obj">AI SCANNING</span></div>
-<div class="card"><b id="speed">0 km/h</b><span class="c">FSD ACTIVE</span></div>
+<div class="card"><b id="speed">0 km/h</b><span class="c">ADAS ACTIVE</span></div>
 <div class="card"><b class="y" id="brain">SYSTEM OK</b><span id="prediction">+10s SAFE</span></div>
 <div class="card"><b class="g" id="distance">0.0 km</b><span>LIVE TELEMETRY</span></div>
 </div>
@@ -66,6 +72,7 @@
 <script>
 const traffic=document.getElementById('traffic'),ego=document.getElementById('ego'),wheel=document.getElementById('wheel');
 let egoLane=1,egoX=50,speed=0,steer=0,cars=[],distance=0,thinking="BOOTING";
+
 function log(t){document.getElementById('log').innerHTML=`[${new Date().toLocaleTimeString()}] ${t}<br>`+document.getElementById('log').innerHTML}
 function laneToX(l){return [18,50,82][l]}
 function spawn(){for(let i=0;i<8;i++)cars.push({lane:Math.floor(Math.random()*3),z:80+i*85,speed:55+Math.random()*25,type:['car','bike','truck','bus'][Math.floor(Math.random()*4)],el:null,label:null})}
@@ -73,7 +80,7 @@ spawn();
 setInterval(()=>{document.getElementById('clock').innerText = new Date().toLocaleTimeString()},1000);
 
 function aiThink(){
-  if(speed<70) speed+=0.8; // Auto pickup
+  if(speed<70) speed+=0.8;
   let danger = cars.filter(o=>o.lane===egoLane && o.z<130 && o.z>20);
   let closestZ = danger.length? Math.min(...danger.map(o=>o.z)) : 999;
   let leftClear =!cars.some(o=>o.lane===0 && Math.abs(o.z-closestZ)<130);
@@ -85,11 +92,10 @@ function aiThink(){
     if(rightClear){thinking="OVERTAKING RIGHT"; egoLane=2; steer=28; return "LANE_CHANGE"}
     thinking="ADAPTIVE CRUISE"; speed=Math.max(45,speed-5); steer=0; return "SLOW"
   }
-  else {thinking="FSD CRUISE"; speed=Math.min(95,speed+0.4); steer*=0.85; return "ACCEL"}
+  else {thinking="ADAS CRUISE"; speed=Math.min(95,speed+0.4); steer*=0.85; return "ACCEL"}
 }
 
 function updateCameras(){
-  document.getElementById('objects').innerText = cars.length + " OBJECTS";
   ['F','L','R','B'].forEach(dir=>{
     const cam = document.getElementById('cam'+dir);
     let html = '';
@@ -116,12 +122,61 @@ function loop(){
   wheel.style.transform = `rotate(${steer}deg)`;
 
   updateCameras();
-  document.getElementById('speed').innerText=Math.floor(speed)+' km/h';
-  document.getElementById('brain').innerText=thinking;
-  document.getElementById('distance').innerText=distance.toFixed(1)+' km';
-  document.getElementById('prediction').innerText = thinking.includes('AEB')? '-2s HAZARD' : '+10s SAFE';
+  
+  // Update HUD if WebSockets is not overriding
+  if(!window.wsConnected){
+    document.getElementById('objects').innerText = cars.length + " OBJECTS";
+    document.getElementById('speed').innerText=Math.floor(speed)+' km/h';
+    document.getElementById('brain').innerText=thinking;
+    document.getElementById('distance').innerText=distance.toFixed(1)+' km';
+    document.getElementById('prediction').innerText = thinking.includes('AEB')? '-2s HAZARD' : '+10s SAFE';
+  }
 
   requestAnimationFrame(loop)
 }
-loop();log('TASLA JSM ONLINE');log('LEVEL 5 AUTONOMY - READY FOR INVESTORS');
-</script></body></html>
+loop();
+log('JSM DRIVE AI ONLINE');
+log('ADAS SYSTEM READY - SOUTH ASIA ROAD SAFETY');
+
+// ==========================================
+// REAL-TIME WEBSOCKET BRIDGE (PYTHON BACKEND)
+// ==========================================
+window.wsConnected = false;
+function connectWebSocket() {
+  const socket = new WebSocket('ws://localhost:8000/ws');
+
+  socket.onopen = function() {
+    window.wsConnected = true;
+    log('LIVE AI BACKEND CONNECTED!');
+  };
+
+  socket.onmessage = function(event) {
+    const data = JSON.parse(event.data);
+    
+    // Live Telemetry Syncing from Python YOLOv8
+    document.getElementById('objects').innerText = `${data.objects_count} OBJECTS`;
+    document.getElementById('brain').innerText = data.status;
+    document.getElementById('distance').innerText = `${data.min_distance} m`;
+    document.getElementById('prediction').innerText = data.status === "CRITICAL_BRAKE" ? "-1s COLLISION RISK" : "+10s SAFE";
+
+    if(data.status === "CRITICAL_BRAKE"){
+      document.body.style.background = "rgba(255, 0, 0, 0.3)";
+      log('CRITICAL: FORWARD COLLISION WARNING!');
+    } else {
+      document.body.style.background = "#000";
+    }
+  };
+
+  socket.onclose = function() {
+    window.wsConnected = false;
+    setTimeout(connectWebSocket, 3000); // Auto Reconnect
+  };
+
+  socket.onerror = function(err) {
+    window.wsConnected = false;
+  };
+}
+connectWebSocket();
+</script>
+</body>
+</html>
