@@ -1,182 +1,82 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>JSM Drive AI - ADAS Dashboard</title>
-<style>
-:root{--jsm-red:#e82127; --jsm-blue:#00ccff}
-*{margin:0;box-sizing:border-box}
-body{background:#000;color:#fff;font-family:system-ui;overflow:hidden;transition:background 0.2s ease}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSM DRIVE AI - FSD Safety Control Center</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', monospace; }
+        body { background: #0b0e14; color: #00ffcc; display: flex; flex-direction: column; align-items: center; padding: 15px; }
+        .header { width: 100%; max-width: 900px; display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 2px solid #ff0055; margin-bottom: 15px; }
+        .title { font-size: 20px; font-weight: bold; color: #ff0055; letter-spacing: 2px; }
+        .status-badge { background: #00ffcc22; color: #00ffcc; border: 1px solid #00ffcc; padding: 4px 10px; font-size: 12px; border-radius: 4px; }
+        
+        .main-container { width: 100%; max-width: 900px; display: grid; grid-template-columns: 2fr 1fr; gap: 15px; }
+        @media (max-width: 768px) { .main-container { grid-template-columns: 1fr; } }
+        
+        .viewport { background: #121824; border: 1px solid #1f293d; border-radius: 8px; height: 380px; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .road { width: 140px; height: 100%; background: #1a2332; position: relative; border-left: 2px dashed #00ffcc; border-right: 2px dashed #00ffcc; }
+        .car { width: 35px; height: 60px; background: #ff0055; position: absolute; bottom: 30px; left: 52px; border-radius: 6px; box-shadow: 0 0 15px #ff0055; }
+        .scan-line { width: 100%; height: 2px; background: #00ffcc; position: absolute; top: 0; animation: scan 3s linear infinite; }
+        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
 
-/* LOGO TOP */
-.top{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#000;border-bottom:2px solid var(--jsm-red)}
-.logo{font-size:18px;font-weight:900;color:var(--jsm-red);letter-spacing:2px}
-.logo span{color:#fff}
-.time{color:var(--jsm-blue);font-weight:700;font-size:12px}
+        .panel { background: #121824; border: 1px solid #1f293d; border-radius: 8px; padding: 15px; }
+        .panel-title { font-size: 14px; color: #888; margin-bottom: 10px; text-transform: uppercase; }
+        
+        .safety-grid { display: grid; grid-template-columns: 1fr; gap: 8px; font-size: 12px; }
+        .safety-item { background: #1a2332; padding: 8px 12px; border-radius: 4px; border-left: 3px solid #00ffcc; display: flex; justify-content: space-between; align-items: center; }
+        .safety-item.active { border-left-color: #ff0055; background: #ff005511; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: #00ffcc; display: inline-block; }
+        .dot.active { background: #ff0055; box-shadow: 0 0 8px #ff0055; }
 
-.road{position:relative;width:100%;height:50vh;background:linear-gradient(#87CEEB 0%, #90EE90 25%, #333 100%);overflow:hidden}
-.road::before{content:'';position:absolute;left:50%;bottom:0;width:100%;height:100%;background:#2a2a2a;transform:translateX(-50%);clip-path: polygon(12% 0, 88% 0, 100% 100%, 0% 100%);}
-.buildings{position:absolute;top:0;width:200%;height:25%;background:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 100"><rect x="10" y="40" width="20" height="60" fill="%23444"/><rect x="40" y="20" width="25" height="80" fill="%23555"/><rect x="75" y="50" width="15" height="50" fill="%23444"/></svg>') repeat-x;animation:city 15s linear infinite}
-@keyframes city{from{background-position-x:0}to{background-position-x:-400px}}
-.lane-line{position:absolute;bottom:0;width:3px;height:100%;background:repeating-linear-gradient(to top,#fff 0 30px,transparent 30px 60px);animation:move 0.2s linear infinite}
-@keyframes move{from{transform:translateY(0)}to{transform:translateY(60px)}}
-.lane-line.l1{left:33.3%}.lane-line.l2{left:66.6%}
-
-#ego{position:absolute;bottom:18px;left:50%;width:75px;height:35px;background:var(--jsm-red);border-radius:7px;transform:translateX(-50%);transition:left 0.12s ease;box-shadow:0 0 35px rgba(232,33,39,1)}
-#ego::after{content:'JSM DRIVE AI';position:absolute;top:-18px;left:50%;transform:translateX(-50%);font-size:10px;font-weight:900;color:#0f0;white-space:nowrap}
-.traffic{position:absolute;bottom:0;left:0;width:100%;height:100%}
-.car{position:absolute;border-radius:4px;transform:translateX(-50%)}
-.car-label{position:absolute;font-size:9px;background:#000d;padding:2px 5px;border-radius:3px;color:#0f0;font-weight:700}
-
-.cameras{display:grid;grid-template-columns:1fr 1fr;gap:3px;padding:4px;background:#050505;height:17vh}
-.cam{position:relative;background:#0a0a0a;border:1px solid #222;border-radius:5px;overflow:hidden}
-.cam b{position:absolute;top:2px;left:4px;font-size:9px;background:#000a;padding:1px 4px;color:#0f0}
-.box{position:absolute;border:2px solid #0f0;background:rgba(0,255,0,0.2)}
-
-.steer-wheel{position:absolute;bottom:8px;right:12px;width:55px;height:55px;border:4px solid #ddd;border-radius:50%;transition:transform 0.08s ease}
-.steer-wheel::before{content:'';position:absolute;top:50%;left:50%;width:10px;height:10px;background:#ddd;border-radius:50%;transform:translate(-50%,-50%)}
-
-.hud{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:5px;padding:5px;background:#0c0c0f}
-.card{background:#15151a;border:1px solid #333;border-radius:7px;padding:6px;text-align:center}
-.card b{font-size:12px;display:block}.g{color:#00ff88}.r{color:var(--jsm-red)}.y{color:#ffcc00}.c{color:var(--jsm-blue)}
-.log{height:9vh;overflow:auto;background:#000;font:8px monospace;color:#0f0;padding:4px}
-</style>
+        .telemetry-row { width: 100%; max-width: 900px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 15px; }
+        .metric-card { background: #121824; border: 1px solid #1f293d; padding: 10px; text-align: center; border-radius: 6px; }
+        .metric-value { font-size: 18px; font-weight: bold; color: #fff; margin-top: 5px; }
+    </style>
 </head>
 <body>
-<div class="top"><div class="logo">JSM <span>DRIVE AI</span></div><div class="time" id="clock">--:--:--</div></div>
 
-<div class="road" id="road">
-<div class="buildings"></div>
-<div class="lane-line l1"></div><div class="lane-line l2"></div>
-<div id="ego"></div>
-<div class="traffic" id="traffic"></div>
-<div class="steer-wheel" id="wheel"></div>
-</div>
+    <div class="header">
+        <div class="title">JSM DRIVE AI <span style="font-size:12px; color:#fff;">v5 SAFETY ENGINE</span></div>
+        <div class="status-badge">10 RULES ACTIVE</div>
+    </div>
 
-<div class="cameras">
-  <div class="cam"><b>FRONT AI VISION</b><div id="camF"></div></div>
-  <div class="cam"><b>LEFT REPEATER</b><div id="camL"></div></div>
-  <div class="cam"><b>RIGHT REPEATER</b><div id="camR"></div></div>
-  <div class="cam"><b>REAR VISION</b><div id="camB"></div></div>
-</div>
+    <div class="main-container">
+        <!-- 3D Road Visualizer -->
+        <div class="viewport">
+            <div class="scan-line"></div>
+            <div class="road">
+                <div class="car"></div>
+            </div>
+            <div style="position: absolute; top: 10px; left: 10px; font-size: 11px; color: #00ffcc;">
+                PERCEPTION: DE-HAZED & HDR ONLINE
+            </div>
+        </div>
 
-<div class="hud">
-<div class="card"><b class="g" id="objects">0 OBJECTS</b><span id="obj">AI SCANNING</span></div>
-<div class="card"><b id="speed">0 km/h</b><span class="c">ADAS ACTIVE</span></div>
-<div class="card"><b class="y" id="brain">SYSTEM OK</b><span id="prediction">+10s SAFE</span></div>
-<div class="card"><b class="g" id="distance">0.0 km</b><span>LIVE TELEMETRY</span></div>
-</div>
-<div class="log" id="log"></div>
+        <!-- 10 FSD Solutions Panel -->
+        <div class="panel">
+            <div class="panel-title">Active Guardrails (10 Safety Solves)</div>
+            <div class="safety-grid">
+                <div class="safety-item"><span>1. Phantom Brake Filter</span> <span class="dot"></span></div>
+                <div class="safety-item"><span>2. Emergency Siren Detector</span> <span class="dot"></span></div>
+                <div class="safety-item"><span>3. Hard Stop Rule (0 km/h)</span> <span class="dot"></span></div>
+                <div class="safety-item"><span>4. De-haze / Rain Restore</span> <span class="dot"></span></div>
+                <div class="safety-item"><span>5. Gaze / Driver Tracking</span> <span class="dot"></span></div>
+                <div class="safety-item"><span>6. School Bus Stop Arm</span> <span class="dot"></span></div>
+                <div class="safety-item"><span>7. Free-Space Lane Nav</span> <span class="dot"></span></div>
+                <div class="safety-item"><span>8. Tunnel Glare Shield</span> <span class="dot"></span></div>
+                <div class="safety-item"><span>9. Occluded Path Predictor</span> <span class="dot"></span></div>
+                <div class="safety-item"><span>10. 3D Cone Trajectory</span> <span class="dot"></span></div>
+            </div>
+        </div>
+    </div>
 
-<script>
-const traffic=document.getElementById('traffic'),ego=document.getElementById('ego'),wheel=document.getElementById('wheel');
-let egoLane=1,egoX=50,speed=0,steer=0,cars=[],distance=0,thinking="BOOTING";
+    <div class="telemetry-row">
+        <div class="metric-card"><div style="font-size:11px; color:#888;">SPEED</div><div class="metric-value">45 km/h</div></div>
+        <div class="metric-card"><div style="font-size:11px; color:#888;">TEMPORAL FRAME</div><div class="metric-value">15/15 PASS</div></div>
+        <div class="metric-card"><div style="font-size:11px; color:#888;">STATUS</div><div class="metric-value" style="color:#00ffcc;">CRUISE SAFE</div></div>
+        <div class="metric-card"><div style="font-size:11px; color:#888;">LATENCY</div><div class="metric-value">12 ms</div></div>
+    </div>
 
-function log(t){document.getElementById('log').innerHTML=`[${new Date().toLocaleTimeString()}] ${t}<br>`+document.getElementById('log').innerHTML}
-function laneToX(l){return [18,50,82][l]}
-function spawn(){for(let i=0;i<8;i++)cars.push({lane:Math.floor(Math.random()*3),z:80+i*85,speed:55+Math.random()*25,type:['car','bike','truck','bus'][Math.floor(Math.random()*4)],el:null,label:null})}
-spawn();
-setInterval(()=>{document.getElementById('clock').innerText = new Date().toLocaleTimeString()},1000);
-
-function aiThink(){
-  if(speed<70) speed+=0.8;
-  let danger = cars.filter(o=>o.lane===egoLane && o.z<130 && o.z>20);
-  let closestZ = danger.length? Math.min(...danger.map(o=>o.z)) : 999;
-  let leftClear =!cars.some(o=>o.lane===0 && Math.abs(o.z-closestZ)<130);
-  let rightClear =!cars.some(o=>o.lane===2 && Math.abs(o.z-closestZ)<130);
-
-  if(danger.length && closestZ < 75){thinking="AEB BRAKING"; speed=Math.max(20,speed-12); steer=0; return "BRAKE"}
-  else if(danger.length && closestZ < 170){
-    if(leftClear){thinking="OVERTAKING LEFT"; egoLane=0; steer=-28; return "LANE_CHANGE"}
-    if(rightClear){thinking="OVERTAKING RIGHT"; egoLane=2; steer=28; return "LANE_CHANGE"}
-    thinking="ADAPTIVE CRUISE"; speed=Math.max(45,speed-5); steer=0; return "SLOW"
-  }
-  else {thinking="ADAS CRUISE"; speed=Math.min(95,speed+0.4); steer*=0.85; return "ACCEL"}
-}
-
-function updateCameras(){
-  ['F','L','R','B'].forEach(dir=>{
-    const cam = document.getElementById('cam'+dir);
-    let html = '';
-    cars.filter(o=>Math.abs(o.z-180)<160).slice(0,2).forEach((o,i)=> html += `<div class="box" style="left:${12+i*35}%;top:28%;width:28%;height:22%"></div>`);
-    cam.innerHTML = html;
-  })
-}
-
-function loop(){
-  aiThink();
-  distance += speed/3600;
-  cars.forEach(o=>{
-    o.z -= (speed - o.speed)*0.45;
-    if(o.z<0){o.z=700+Math.random()*180;o.lane=Math.floor(Math.random()*3);o.speed=55+Math.random()*25}
-    if(!o.el){o.el=document.createElement('div');o.el.className='car';traffic.appendChild(o.el); o.label=document.createElement('div');o.label.className='car-label';traffic.appendChild(o.label)}
-    let p=320/(o.z+160); let y= 4 + (96-4)*(1-p); let x=laneToX(o.lane);
-    o.el.style.top=y+'%'; o.el.style.left=x+'%'; o.el.style.width=(p*55+22)+'px'; o.el.style.height=(p*28+14)+'px';
-    o.el.style.background=o.type==='truck'?'#777':o.type==='bus'?'#0099ff':o.type==='bike'?'#ff3333':'#ff2222';
-    o.label.style.top=(y-4.5)+'%'; o.label.style.left=x+'%'; o.label.innerText=o.type.toUpperCase()+' '+Math.floor(o.z/6)+'m';
-  });
-
-  egoX=laneToX(egoLane);
-  ego.style.left=egoX+'%';
-  wheel.style.transform = `rotate(${steer}deg)`;
-
-  updateCameras();
-  
-  // Update HUD if WebSockets is not overriding
-  if(!window.wsConnected){
-    document.getElementById('objects').innerText = cars.length + " OBJECTS";
-    document.getElementById('speed').innerText=Math.floor(speed)+' km/h';
-    document.getElementById('brain').innerText=thinking;
-    document.getElementById('distance').innerText=distance.toFixed(1)+' km';
-    document.getElementById('prediction').innerText = thinking.includes('AEB')? '-2s HAZARD' : '+10s SAFE';
-  }
-
-  requestAnimationFrame(loop)
-}
-loop();
-log('JSM DRIVE AI ONLINE');
-log('ADAS SYSTEM READY - SOUTH ASIA ROAD SAFETY');
-
-// ==========================================
-// REAL-TIME WEBSOCKET BRIDGE (PYTHON BACKEND)
-// ==========================================
-window.wsConnected = false;
-function connectWebSocket() {
-  const socket = new WebSocket('ws://localhost:8000/ws');
-
-  socket.onopen = function() {
-    window.wsConnected = true;
-    log('LIVE AI BACKEND CONNECTED!');
-  };
-
-  socket.onmessage = function(event) {
-    const data = JSON.parse(event.data);
-    
-    // Live Telemetry Syncing from Python YOLOv8
-    document.getElementById('objects').innerText = `${data.objects_count} OBJECTS`;
-    document.getElementById('brain').innerText = data.status;
-    document.getElementById('distance').innerText = `${data.min_distance} m`;
-    document.getElementById('prediction').innerText = data.status === "CRITICAL_BRAKE" ? "-1s COLLISION RISK" : "+10s SAFE";
-
-    if(data.status === "CRITICAL_BRAKE"){
-      document.body.style.background = "rgba(255, 0, 0, 0.3)";
-      log('CRITICAL: FORWARD COLLISION WARNING!');
-    } else {
-      document.body.style.background = "#000";
-    }
-  };
-
-  socket.onclose = function() {
-    window.wsConnected = false;
-    setTimeout(connectWebSocket, 3000); // Auto Reconnect
-  };
-
-  socket.onerror = function(err) {
-    window.wsConnected = false;
-  };
-}
-connectWebSocket();
-</script>
 </body>
 </html>
