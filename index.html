@@ -3,80 +3,135 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JSM DRIVE AI - FSD Safety Control Center</title>
+    <title>JSM FSD Challenge - Level 1: Phantom Braking</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', monospace; }
-        body { background: #0b0e14; color: #00ffcc; display: flex; flex-direction: column; align-items: center; padding: 15px; }
-        .header { width: 100%; max-width: 900px; display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 2px solid #ff0055; margin-bottom: 15px; }
-        .title { font-size: 20px; font-weight: bold; color: #ff0055; letter-spacing: 2px; }
-        .status-badge { background: #00ffcc22; color: #00ffcc; border: 1px solid #00ffcc; padding: 4px 10px; font-size: 12px; border-radius: 4px; }
+        body { background: #080b10; color: #00ffcc; text-align: center; padding: 10px; overflow-x: hidden; }
         
-        .main-container { width: 100%; max-width: 900px; display: grid; grid-template-columns: 2fr 1fr; gap: 15px; }
-        @media (max-width: 768px) { .main-container { grid-template-columns: 1fr; } }
+        .header { margin-bottom: 10px; border-bottom: 1px solid #ff0055; padding-bottom: 5px; }
+        .title { font-size: 18px; color: #ff0055; letter-spacing: 2px; }
         
-        .viewport { background: #121824; border: 1px solid #1f293d; border-radius: 8px; height: 380px; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        .road { width: 140px; height: 100%; background: #1a2332; position: relative; border-left: 2px dashed #00ffcc; border-right: 2px dashed #00ffcc; }
-        .car { width: 35px; height: 60px; background: #ff0055; position: absolute; bottom: 30px; left: 52px; border-radius: 6px; box-shadow: 0 0 15px #ff0055; }
-        .scan-line { width: 100%; height: 2px; background: #00ffcc; position: absolute; top: 0; animation: scan 3s linear infinite; }
-        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
-
-        .panel { background: #121824; border: 1px solid #1f293d; border-radius: 8px; padding: 15px; }
-        .panel-title { font-size: 14px; color: #888; margin-bottom: 10px; text-transform: uppercase; }
+        #gameCanvas { background: #111622; border: 2px solid #1f293d; border-radius: 8px; width: 100%; max-width: 500px; height: 350px; display: block; margin: 0 auto; }
         
-        .safety-grid { display: grid; grid-template-columns: 1fr; gap: 8px; font-size: 12px; }
-        .safety-item { background: #1a2332; padding: 8px 12px; border-radius: 4px; border-left: 3px solid #00ffcc; display: flex; justify-content: space-between; align-items: center; }
-        .safety-item.active { border-left-color: #ff0055; background: #ff005511; }
-        .dot { width: 8px; height: 8px; border-radius: 50%; background: #00ffcc; display: inline-block; }
-        .dot.active { background: #ff0055; box-shadow: 0 0 8px #ff0055; }
-
-        .telemetry-row { width: 100%; max-width: 900px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 15px; }
-        .metric-card { background: #121824; border: 1px solid #1f293d; padding: 10px; text-align: center; border-radius: 6px; }
-        .metric-value { font-size: 18px; font-weight: bold; color: #fff; margin-top: 5px; }
+        .controls { margin-top: 15px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+        .btn { background: #1f293d; color: #fff; border: 1px solid #00ffcc; padding: 10px 18px; font-size: 14px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .btn-active { background: #00ffcc; color: #000; box-shadow: 0 0 10px #00ffcc; }
+        
+        .telemetry { margin-top: 15px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 500px; margin-left: auto; margin-right: auto; }
+        .card { background: #111622; border: 1px solid #1f293d; padding: 8px; border-radius: 6px; }
+        .val { font-size: 16px; font-weight: bold; color: #fff; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <div class="title">JSM DRIVE AI <span style="font-size:12px; color:#fff;">v5 SAFETY ENGINE</span></div>
-        <div class="status-badge">10 RULES ACTIVE</div>
+        <div class="title">LEVEL 1: PHANTOM BRAKING SIMULATOR</div>
+        <div style="font-size: 12px; color: #aaa;">JSM DRIVE AI vs STANDARD FSD</div>
     </div>
 
-    <div class="main-container">
-        <!-- 3D Road Visualizer -->
-        <div class="viewport">
-            <div class="scan-line"></div>
-            <div class="road">
-                <div class="car"></div>
-            </div>
-            <div style="position: absolute; top: 10px; left: 10px; font-size: 11px; color: #00ffcc;">
-                PERCEPTION: DE-HAZED & HDR ONLINE
-            </div>
-        </div>
+    <canvas id="gameCanvas" width="400" height="350"></canvas>
 
-        <!-- 10 FSD Solutions Panel -->
-        <div class="panel">
-            <div class="panel-title">Active Guardrails (10 Safety Solves)</div>
-            <div class="safety-grid">
-                <div class="safety-item"><span>1. Phantom Brake Filter</span> <span class="dot"></span></div>
-                <div class="safety-item"><span>2. Emergency Siren Detector</span> <span class="dot"></span></div>
-                <div class="safety-item"><span>3. Hard Stop Rule (0 km/h)</span> <span class="dot"></span></div>
-                <div class="safety-item"><span>4. De-haze / Rain Restore</span> <span class="dot"></span></div>
-                <div class="safety-item"><span>5. Gaze / Driver Tracking</span> <span class="dot"></span></div>
-                <div class="safety-item"><span>6. School Bus Stop Arm</span> <span class="dot"></span></div>
-                <div class="safety-item"><span>7. Free-Space Lane Nav</span> <span class="dot"></span></div>
-                <div class="safety-item"><span>8. Tunnel Glare Shield</span> <span class="dot"></span></div>
-                <div class="safety-item"><span>9. Occluded Path Predictor</span> <span class="dot"></span></div>
-                <div class="safety-item"><span>10. 3D Cone Trajectory</span> <span class="dot"></span></div>
-            </div>
-        </div>
+    <div class="controls">
+        <button class="btn btn-active" id="jsmBtn" onclick="setMode('JSM')">JSM AI MODE (ACTIVE)</button>
+        <button class="btn" id="teslaBtn" onclick="setMode('TESLA')">STANDARD FSD MODE</button>
     </div>
 
-    <div class="telemetry-row">
-        <div class="metric-card"><div style="font-size:11px; color:#888;">SPEED</div><div class="metric-value">45 km/h</div></div>
-        <div class="metric-card"><div style="font-size:11px; color:#888;">TEMPORAL FRAME</div><div class="metric-value">15/15 PASS</div></div>
-        <div class="metric-card"><div style="font-size:11px; color:#888;">STATUS</div><div class="metric-value" style="color:#00ffcc;">CRUISE SAFE</div></div>
-        <div class="metric-card"><div style="font-size:11px; color:#888;">LATENCY</div><div class="metric-value">12 ms</div></div>
+    <div class="telemetry">
+        <div class="card"><div style="font-size:10px; color:#888;">SPEED</div><div class="val" id="speedVal">60 km/h</div></div>
+        <div class="card"><div style="font-size:10px; color:#888;">SHADOW STATUS</div><div class="val" id="shadowVal">CLEAR</div></div>
+        <div class="card"><div style="font-size:10px; color:#888;">ACTION</div><div class="val" id="actionVal" style="color:#00ffcc;">CRUISE</div></div>
     </div>
 
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+
+        let mode = "JSM"; // JSM or TESLA
+        let speed = 60;
+        let carY = 250;
+        let shadowY = -100;
+        let action = "CRUISE";
+        let shadowDetected = false;
+        let frameConsensus = 0;
+
+        function setMode(m) {
+            mode = m;
+            document.getElementById("jsmBtn").className = m === 'JSM' ? "btn btn-active" : "btn";
+            document.getElementById("teslaBtn").className = m === 'TESLA' ? "btn btn-active" : "btn";
+        }
+
+        function updateGame() {
+            // Move Tree Shadow down the road
+            shadowY += 3;
+            if (shadowY > 350) shadowY = -100;
+
+            // Check Shadow Detection zone
+            if (shadowY > 150 && shadowY < 230) {
+                shadowDetected = true;
+                if (mode === "TESLA") {
+                    // Standard FSD False Positive Brake Trigger
+                    speed = Math.max(0, speed - 4);
+                    action = "PHANTOM BRAKE!";
+                } else {
+                    // JSM Temporal Consensus Logic (Verifies over 15 frames)
+                    frameConsensus++;
+                    if (frameConsensus < 15) {
+                        speed = 60;
+                        action = "SHADOW IGNORED";
+                    }
+                }
+            } else {
+                shadowDetected = false;
+                frameConsensus = 0;
+                speed = Math.min(60, speed + 2);
+                if (speed === 60) action = "NORMAL CRUISE";
+            }
+
+            // Update DOM UI
+            document.getElementById("speedVal").innerText = speed + " km/h";
+            document.getElementById("shadowVal").innerText = shadowDetected ? "SHADOW DETECTED" : "CLEAR";
+            document.getElementById("actionVal").innerText = action;
+            document.getElementById("actionVal").style.color = action.includes("BRAKE") ? "#ff0055" : "#00ffcc";
+
+            drawScreen();
+            requestAnimationFrame(updateGame);
+        }
+
+        function drawScreen() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Road Background
+            ctx.fillStyle = "#1a2332";
+            ctx.fillRect(100, 0, 200, 350);
+
+            // Lane Markings
+            ctx.strokeStyle = "#00ffcc";
+            ctx.setLineDash([15, 15]);
+            ctx.beginPath();
+            ctx.moveTo(200, 0); ctx.lineTo(200, 350);
+            ctx.stroke();
+
+            // Tree Shadow Object (Hazard)
+            ctx.fillStyle = "rgba(0, 0, 0, 0.55)";
+            ctx.beginPath();
+            ctx.ellipse(200, shadowY, 70, 20, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Tesla / JSM Car Visual
+            ctx.fillStyle = action.includes("BRAKE") ? "#ff0055" : "#00ffcc";
+            ctx.shadowBlur = 12;
+            ctx.shadowColor = ctx.fillStyle;
+            ctx.fillRect(182, carY, 36, 65);
+            ctx.shadowBlur = 0;
+
+            // HUD Overlay Text
+            ctx.fillStyle = "#fff";
+            ctx.font = "11px monospace";
+            ctx.fillText("MODE: " + mode, 110, 20);
+            ctx.fillText("TEMPORAL CONSENSUS: " + frameConsensus + "/15", 110, 35);
+        }
+
+        updateGame();
+    </script>
 </body>
 </html>
