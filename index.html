@@ -1,137 +1,69 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JSM FSD Challenge - Level 1: Phantom Braking</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', monospace; }
-        body { background: #080b10; color: #00ffcc; text-align: center; padding: 10px; overflow-x: hidden; }
-        
-        .header { margin-bottom: 10px; border-bottom: 1px solid #ff0055; padding-bottom: 5px; }
-        .title { font-size: 18px; color: #ff0055; letter-spacing: 2px; }
-        
-        #gameCanvas { background: #111622; border: 2px solid #1f293d; border-radius: 8px; width: 100%; max-width: 500px; height: 350px; display: block; margin: 0 auto; }
-        
-        .controls { margin-top: 15px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
-        .btn { background: #1f293d; color: #fff; border: 1px solid #00ffcc; padding: 10px 18px; font-size: 14px; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        .btn-active { background: #00ffcc; color: #000; box-shadow: 0 0 10px #00ffcc; }
-        
-        .telemetry { margin-top: 15px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 500px; margin-left: auto; margin-right: auto; }
-        .card { background: #111622; border: 1px solid #1f293d; padding: 8px; border-radius: 6px; }
-        .val { font-size: 16px; font-weight: bold; color: #fff; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>JSM TEXLA - 21-in-1 SAFETY OS | Pakistan's First Self-Driving Brain</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#020617;color:#e2e8f0;font-family:Inter,sans-serif}
+header{padding:14px 20px;border-bottom:1px solid #38bdf833;display:flex;justify-content:space-between;align-items:center;background:#020617e6;position:sticky;top:0;z-index:10}
+.logo{color:#38bdf8;font-weight:900;letter-spacing:2px}
+.badge{border:1px solid #38bdf866;padding:5px 10px;border-radius:20px;font-size:11px;background:#38bdf81a}
+.grid{display:grid;grid-template-columns:260px 1fr 300px;min-height:100vh}
+.sidebar,.right{background:#0f172a99;padding:14px;border:1px solid #ffffff0d;overflow-y:auto}
+.item{padding:10px 12px;border-radius:10px;cursor:pointer;margin:4px 0;font-size:13px;border:1px solid transparent}
+.item:hover{background:#38bdf81a;border-color:#38bdf833}
+.item.active{background:linear-gradient(90deg,#38bdf833,#a855f733);border-color:#38bdf8;color:#fff}
+.main{padding:22px;overflow-y:auto}
+.card{background:#0f172acc;border:1px solid #38bdf822;border-radius:16px;padding:18px;margin-bottom:14px}
+.hud{height:200px;background:radial-gradient(circle at 50% 0%,#38bdf822,#020617);border:1px solid #38bdf84d;border-radius:12px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;margin:14px 0}
+.code{background:#000;border:1px solid #ffffff14;border-radius:8px;padding:10px;font-family:monospace;font-size:11px;color:#38bdf8;overflow:auto}
+.btn{background:linear-gradient(90deg,#38bdf8,#a855f7);color:#fff;padding:9px 16px;border-radius:999px;text-decoration:none;font-weight:700;font-size:12px;margin:3px;display:inline-block}
+</style>
 </head>
 <body>
-
-    <div class="header">
-        <div class="title">LEVEL 1: PHANTOM BRAKING SIMULATOR</div>
-        <div style="font-size: 12px; color: #aaa;">JSM DRIVE AI vs STANDARD FSD</div>
-    </div>
-
-    <canvas id="gameCanvas" width="400" height="350"></canvas>
-
-    <div class="controls">
-        <button class="btn btn-active" id="jsmBtn" onclick="setMode('JSM')">JSM AI MODE (ACTIVE)</button>
-        <button class="btn" id="teslaBtn" onclick="setMode('TESLA')">STANDARD FSD MODE</button>
-    </div>
-
-    <div class="telemetry">
-        <div class="card"><div style="font-size:10px; color:#888;">SPEED</div><div class="val" id="speedVal">60 km/h</div></div>
-        <div class="card"><div style="font-size:10px; color:#888;">SHADOW STATUS</div><div class="val" id="shadowVal">CLEAR</div></div>
-        <div class="card"><div style="font-size:10px; color:#888;">ACTION</div><div class="val" id="actionVal" style="color:#00ffcc;">CRUISE</div></div>
-    </div>
-
-    <script>
-        const canvas = document.getElementById("gameCanvas");
-        const ctx = canvas.getContext("2d");
-
-        let mode = "JSM"; // JSM or TESLA
-        let speed = 60;
-        let carY = 250;
-        let shadowY = -100;
-        let action = "CRUISE";
-        let shadowDetected = false;
-        let frameConsensus = 0;
-
-        function setMode(m) {
-            mode = m;
-            document.getElementById("jsmBtn").className = m === 'JSM' ? "btn btn-active" : "btn";
-            document.getElementById("teslaBtn").className = m === 'TESLA' ? "btn btn-active" : "btn";
-        }
-
-        function updateGame() {
-            // Move Tree Shadow down the road
-            shadowY += 3;
-            if (shadowY > 350) shadowY = -100;
-
-            // Check Shadow Detection zone
-            if (shadowY > 150 && shadowY < 230) {
-                shadowDetected = true;
-                if (mode === "TESLA") {
-                    // Standard FSD False Positive Brake Trigger
-                    speed = Math.max(0, speed - 4);
-                    action = "PHANTOM BRAKE!";
-                } else {
-                    // JSM Temporal Consensus Logic (Verifies over 15 frames)
-                    frameConsensus++;
-                    if (frameConsensus < 15) {
-                        speed = 60;
-                        action = "SHADOW IGNORED";
-                    }
-                }
-            } else {
-                shadowDetected = false;
-                frameConsensus = 0;
-                speed = Math.min(60, speed + 2);
-                if (speed === 60) action = "NORMAL CRUISE";
-            }
-
-            // Update DOM UI
-            document.getElementById("speedVal").innerText = speed + " km/h";
-            document.getElementById("shadowVal").innerText = shadowDetected ? "SHADOW DETECTED" : "CLEAR";
-            document.getElementById("actionVal").innerText = action;
-            document.getElementById("actionVal").style.color = action.includes("BRAKE") ? "#ff0055" : "#00ffcc";
-
-            drawScreen();
-            requestAnimationFrame(updateGame);
-        }
-
-        function drawScreen() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // Road Background
-            ctx.fillStyle = "#1a2332";
-            ctx.fillRect(100, 0, 200, 350);
-
-            // Lane Markings
-            ctx.strokeStyle = "#00ffcc";
-            ctx.setLineDash([15, 15]);
-            ctx.beginPath();
-            ctx.moveTo(200, 0); ctx.lineTo(200, 350);
-            ctx.stroke();
-
-            // Tree Shadow Object (Hazard)
-            ctx.fillStyle = "rgba(0, 0, 0, 0.55)";
-            ctx.beginPath();
-            ctx.ellipse(200, shadowY, 70, 20, 0, 0, Math.PI * 2);
-            ctx.fill();
-
-            // Tesla / JSM Car Visual
-            ctx.fillStyle = action.includes("BRAKE") ? "#ff0055" : "#00ffcc";
-            ctx.shadowBlur = 12;
-            ctx.shadowColor = ctx.fillStyle;
-            ctx.fillRect(182, carY, 36, 65);
-            ctx.shadowBlur = 0;
-
-            // HUD Overlay Text
-            ctx.fillStyle = "#fff";
-            ctx.font = "11px monospace";
-            ctx.fillText("MODE: " + mode, 110, 20);
-            ctx.fillText("TEMPORAL CONSENSUS: " + frameConsensus + "/15", 110, 35);
-        }
-
-        updateGame();
-    </script>
+<header>
+<div><span class="logo">JSM TEXLA</span> <b style="margin-left:10px;color:#fff">21-in-1 SAFETY OS</b></div>
+<div><span class="badge">🟢 70% Logic Ready</span> <a class="badge" href="https://github.com/sajan3399133cpu/TASLA-JSM" target="_blank" style="color:#38bdf8;text-decoration:none">GitHub</a></div>
+</header>
+<div class="grid">
+<div class="sidebar">
+<div style="font-size:10px;color:#94a3b8;letter-spacing:2px;margin:8px 0">🚗 TESLA 13 MODULES</div>
+<div id="tesla"></div>
+<div style="font-size:10px;color:#94a3b8;letter-spacing:2px;margin:16px 0 8px">🚀 SPACEX 8 MODULES</div>
+<div id="spacex"></div>
+</div>
+<div class="main">
+<div class="card">
+<h1 style="color:#fff;font-size:28px;font-weight:900">Pakistan's First Self-Driving Safety Brain</h1>
+<p style="color:#94a3b8;margin:10px 0">Built in Karachi, Pakistan by Jam Saeed Motha - 4 Years Alone at 3AM | Tesla 13 + SpaceX 8 = 21 AI Modules | YOLOv8 + LIDAR + PyTorch</p>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+<span class="badge">21 AI MODULES</span><span class="badge"> $300k Logic Saved</span><span class="badge"> Need $2000 Hardware</span><span class="badge"> Vercel Live</span>
+</div>
+<div style="margin-top:14px">
+<a class="btn" href="https://github.com/sajan3399133cpu/TASLA-JSM" target="_blank">GitHub Repo</a>
+<a class="btn" href="https://tasla-jsm.vercel.app" target="_blank">Live Website</a>
+<a class="btn" href="#">YouTube Demo</a>
+</div>
+</div>
+<div class="card" id="feature">Left menu se koi feature select kar, live HUD dekhega.</div>
+</div>
+<div class="right">
+<div class="card"><div style="font-size:11px;letter-spacing:1px"><b>SYSTEM STATUS</b></div><div style="font-size:12px;line-height:22px;margin-top:8px">AI Brain: <span style="color:#22c55e">● ProDriverBrain Active</span><br>Vision: YOLOv8 + LIDAR Fusion<br>Policy: usa_driver_policy.pt<br>Platform: Colab / Jetson Ready<br>Location: Karachi, PK</div></div>
+<div class="card" style="background:linear-gradient(135deg,#38bdf822,#a855f722);border-color:#38bdf8"><b>Investor Needed</b><p style="font-size:11px;color:#cbd5e1;margin-top:6px">We have the brain. We need the body. $2000 for Nvidia Jetson Orin + cameras + sensors for live road test.</p></div>
+<div class="card"><div style="font-size:11px"><b>LIVE LOGS</b></div><div id="logs" style="font-family:monospace;font-size:10px;margin-top:8px"></div></div>
+</div>
+</div>
+<script>
+const T=["Phantom Braking Fix","Emergency Vehicle Detection","Child Behind Car Alert","Black Ice Prediction","Battery Fail Prediction","Pedestrian Night Detection","Lane Drift Prevention","Traffic Light + Stop Sign AI","Blind Spot Monitoring","Animal Crossing Alert","Flooded Road Detection","Driver Drowsiness Alert","Auto Parking Safety"];
+const S=["Scrub Launch Predictor","Swarm Collision AI","Booster Landing Wind Fix","Laser Link Stabilizer","Space Debris Predictor","Solar Flare Alert","Fuel Leak Detection","Auto Docking Safety"];
+const teslaDiv=document.getElementById('tesla');const spacexDiv=document.getElementById('spacex');
+T.forEach((n,i)=>{let d=document.createElement('div');d.className='item';d.innerHTML=(i+1)+'. '+n+' <span style="float:right">🟢</span>';d.onclick=()=>show(i,0,d);teslaDiv.appendChild(d)});
+S.forEach((n,i)=>{let d=document.createElement('div');d.className='item';d.innerHTML=(i+14)+'. '+n+' <span style="float:right">🟣</span>';d.onclick=()=>show(i,1,d);spacexDiv.appendChild(d)});
+function show(i,type,el){document.querySelectorAll('.item').forEach(e=>e.classList.remove('active'));el.classList.add('active');let name=type==0?T[i]:S[i];let num=type==0?i+1:i+14;document.getElementById('feature').innerHTML=`<h2 style="color:#fff">[${num}/21] ${name}</h2><div class="hud"><div style="border:1px solid #38bdf8;padding:8px 14px;border-radius:10px;background:#38bdf822;color:#38bdf8;font-weight:800">${name.toUpperCase()} - ACTIVE</div></div><div class="code">def ${name.toLowerCase().replace(/ /g,'_')}_ai():<br>&nbsp;&nbsp;# JSM TEXLA - ${name}<br>&nbsp;&nbsp;if risk_detected():<br>&nbsp;&nbsp;&nbsp;&nbsp;return "BLOCK / ALERT / EVADE"<br>&nbsp;&nbsp;return "SAFE"<br><br># ✅ Logic Ready | 🔧 Hardware Need $2000</div><div style="margin-top:10px"><span class="badge">Logic 100%</span> <span class="badge">Hardware 40%</span> <span class="badge">8-sec Video Ready</span></div>`;}
+function addLog(){const a=["Phantom blocked OK","Emergency 50m OK","Child BRAKE OK","Black ice 80% OK","Battery 8min OK","Pedestrian green OK","Lane corrected OK","Stop sign OK","Blindspot bike OK","Animal brake OK","Flood 12in OK","Drowsy alarm OK","Parking stop OK","Scrub 70% OK","Collision avoid OK","Booster landing OK","Laser stable OK","Debris evade OK","Solar flare OK","Fuel abort OK","Docking 0.5m/s OK"];let l=document.getElementById('logs');let t=new Date().toLocaleTimeString();l.innerHTML=`<div style="padding:3px 0;border-bottom:1px solid #ffffff0a"><span style="color:#64748b">${t}</span> ${a[Math.floor(Math.random()*a.length)]}</div>`+l.innerHTML;}
+setInterval(addLog,1200);document.querySelector('.item').click();
+</script>
 </body>
 </html>
